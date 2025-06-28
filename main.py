@@ -20,19 +20,16 @@ class JsonParserApp(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
         
-        # 文件选择区域
-        self.file_drop_area = QLabel("拖拽JSON文件到此处 或 点击下方按钮选择文件")
+        # 文件选择区域（可拖拽和点击）
+        self.file_drop_area = QLabel("拖拽或点击此处选择JSON文件")
         self.file_drop_area.setAlignment(Qt.AlignCenter)
         self.file_drop_area.setStyleSheet(
             "QLabel { border: 2px dashed #aaa; padding: 20px; }"
-            "QLabel:hover { background-color: #f0f0f0; }"
+            "QLabel:hover { background-color: #f0f0f0; cursor: pointer; }"
         )
         self.file_drop_area.setAcceptDrops(True)
+        self.file_drop_area.mousePressEvent = self.open_file_dialog  # 添加点击事件
         self.file_path = ""
-        
-        # 选择文件按钮
-        self.btn_select = QPushButton("选择文件")
-        self.btn_select.clicked.connect(self.open_file_dialog)
         
         # 解析按钮
         self.btn_parse = QPushButton("解析JSON")
@@ -59,7 +56,6 @@ class JsonParserApp(QMainWindow):
 
         # 布局组合
         file_layout = QHBoxLayout()
-        file_layout.addWidget(self.btn_select)
         file_layout.addWidget(self.btn_parse)
         
         main_layout.addWidget(self.file_drop_area)
@@ -69,7 +65,7 @@ class JsonParserApp(QMainWindow):
         main_layout.addWidget(self.table)
 
     
-    def open_file_dialog(self):
+    def open_file_dialog(self, event=None):
         """通过对话框选择文件"""
         file_dialog = QFileDialog(self)
         file_dialog.setNameFilter("JSON文件 (*.json)")
