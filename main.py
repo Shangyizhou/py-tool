@@ -15,12 +15,10 @@ class JsonParserApp(QMainWindow):
         self.setWindowTitle("JSON性能数据解析工具")
         self.setGeometry(100, 100, 800, 600)
         
-        # 主窗口布局
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
         
-        # 文件选择区域（可拖拽和点击）
         self.file_drop_area = QLabel("拖拽或点击此处选择JSON文件")
         self.file_drop_area.setAlignment(Qt.AlignCenter)
         self.file_drop_area.setStyleSheet(
@@ -28,33 +26,21 @@ class JsonParserApp(QMainWindow):
             "QLabel:hover { background-color: #f0f0f0; cursor: pointer; }"
         )
         self.file_drop_area.setAcceptDrops(True)
-        self.file_drop_area.mousePressEvent = self.open_file_dialog  # 添加点击事件
+        self.file_drop_area.mousePressEvent = self.open_file_dialog
         self.file_path = ""
         
-        # 解析按钮
         self.btn_parse = QPushButton("解析JSON")
         self.btn_parse.clicked.connect(self.parse_json)
         self.btn_parse.setEnabled(False)
         
-        # 文件路径显示
         self.label_path = QLabel("未选择文件")
         self.label_path.setWordWrap(True)
         
-        # 表格展示区域
         self.table = QTableWidget()
-        self.table.setColumnCount(8)
-        self.table.setHorizontalHeaderLabels([
-            "renderCost", "writeFrameCost", "extractCost",
-            "algorithmCost", "feedCost", "segmentCount",
-            "isUseSnpe", "isUseMtk"
-        ])
-        
-        # 导出飞书Markdown
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.btn_export = QPushButton("导出为飞书Markdown") 
         self.btn_export.clicked.connect(self.export_to_feishu_md)
+        self.dynamic_headers = []
 
-        # 布局组合
         file_layout = QHBoxLayout()
         file_layout.addWidget(self.btn_parse)
         
@@ -92,7 +78,7 @@ class JsonParserApp(QMainWindow):
                 break
     
     def parse_json(self):
-        """解析JSON并填充表格"""
+        """动态解析JSON并填充表格"""
         if not self.file_path:
             return
         
@@ -100,15 +86,31 @@ class JsonParserApp(QMainWindow):
             with open(self.file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
-            # 清空表格并设置行数
-            self.table.setRowCount(0)
-            if isinstance(data, list):
-                self.table.setRowCount(len(data))
-                for row_idx, item in enumerate(data):
-                    self._fill_table_row(row_idx, item)
-            elif isinstance(data, dict):
-                self.table.setRowCount(1)
-                self._fill_table_row(0, data)
+            # 统一为列表
+            if isinstance(data, dict):
+                data = [data]
+            elif not isinstance(data, list):
+                self.label_path.setText("不支持的JSON结构")
+                return
+
+            # 动态获取所有字段
+            all_fields = set()
+            for item in data:
+                if isinstance(item, dict):
+                    all_fields.update(item.keys())
+            self.dynamic_headers = list(all_fields)
+            self.dynamic_headers.sort()  # 可选：字段排序
+
+            self.table.clear()
+            self.table.setColumnCount(len(self.dynamic_headers))
+            self.table.setHorizontalHeaderLabels(self.dynamic_headers)
+            self.table.setRowCount(len(data))
+            self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+            for row_idx, item in enumerate(data):
+                for col_idx, field in enumerate(self.dynamic_headers):
+                    value = item.get(field, "N/A")
+                    self.table.setItem(row_idx, col_idx, QTableWidgetItem(str(value)))
             
         except Exception as e:
             self.label_path.setText(f"解析失败: {str(e)}")
