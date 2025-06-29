@@ -1,0 +1,10 @@
+{
+  "renderCost": 45.2,
+  "writeFrameCost": 12.8,
+  "extractCost": 23.1,
+  "algorithmCost": 56.7,
+  "feedCost": 8.4,
+  "segmentCount": 5,
+  "isUseSnpe": true,
+  "isUseMtk": false
+}
